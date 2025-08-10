@@ -1,9 +1,10 @@
+from hero import Hero
 from menu_button import Button
 
-# Dimensões da tela (Jogo com 20x20 tiles, cada tile com 16x16 pixels)
-TILE_SIZE = 16
-WIDTH = TILE_SIZE * 20
-HEIGHT = TILE_SIZE * 20
+# Dimensões da tela (Jogo com 16x16 tiles, cada tile com 16x18 pixels)
+TILE_SIZE = 18
+WIDTH = TILE_SIZE * 16
+HEIGHT = TILE_SIZE * 16
 
 game_state = "menu"  # Estados do jogo: menu, playing
 sound_on = True
@@ -19,8 +20,10 @@ def on_mouse_move(pos):
     mouse_position = pos
 
 
+# Cria os objetos para um jogo novo e atualiza o game state
 def on_start():
-    global game_state
+    global game_state, hero
+    hero = Hero((WIDTH // 2, HEIGHT // 2), 1)
     game_state = "playing"
     print("[DEBUG] game_state:", game_state)
 
@@ -80,6 +83,18 @@ def on_mouse_down(pos):
 
 
 def draw():
-    global game_state
     if game_state == "menu":
         draw_menu()
+    if game_state == "playing":
+        screen.clear()
+        hero.draw()
+
+
+def update():
+    if game_state == "playing":
+        hero.animate()
+        hero.move(
+            keyboard,
+            (TILE_SIZE, WIDTH - TILE_SIZE, TILE_SIZE, HEIGHT - TILE_SIZE),
+            TILE_SIZE,
+        )
