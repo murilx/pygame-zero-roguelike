@@ -7,7 +7,7 @@ TILE_SIZE = 18
 WIDTH = TILE_SIZE * 16
 HEIGHT = TILE_SIZE * 16
 
-game_state = "menu"  # Estados do jogo: menu, playing, defeat
+game_state = "menu"  # Estados do jogo: menu, playing, defeat, victory
 sound_on = True
 sounds.background.play(-1)
 menu_buttons = []
@@ -23,9 +23,10 @@ def on_mouse_move(pos):
 
 # Cria os objetos para um jogo novo e atualiza o game state
 def on_start():
-    global game_state, hero
+    global game_state, hero, goal
     global bullets, enemies
     hero = Hero((WIDTH // 2, HEIGHT // 2))
+    goal = Actor("goal", (WIDTH // 2, HEIGHT - 36))
     enemies = [Orc((36, HEIGHT // 2)), Shooter((WIDTH // 2, 36))]
     bullets = []
     game_state = "playing"
@@ -100,7 +101,7 @@ def on_mouse_down(pos):
     if game_state == "menu":
         for button in menu_buttons:
             button.check_click(pos)
-    if game_state == "defeat":
+    if game_state == "defeat" or game_state == "victory":
         on_exit()  # Fecha o jogo
 
 
@@ -141,6 +142,9 @@ def check_collisions():
         if hero.actor.colliderect(bullet[0]):
             game_state = "defeat"
 
+    if hero.actor.colliderect(goal):
+        game_state = "victory"
+
 
 def draw():
     if game_state == "menu":
@@ -152,8 +156,11 @@ def draw():
             enemy.draw()
         for bullet in bullets:
             bullet[0].draw()
+        goal.draw()
     if game_state == "defeat":
         draw_end_screen("Derrota")
+    if game_state == "victory":
+        draw_end_screen("Vitória")
 
 
 def update():
