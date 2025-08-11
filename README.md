@@ -26,6 +26,14 @@ python3 -m pip install -r requirements.txt
 pgzrun main.py
 ```
 
+## 📺 Imagens do jogo
+
+![Tela inicial](resources/menu_screen.png)
+![Jogo Principal](resources/main_game.png)
+![Tesouro](resources/victory_room.png)
+![Tela de Vitória](resources/victory_screen.png)
+![Tela de Derrota](resources/defeat_screen.png)
+
 ## Assets
 
 - Música: https://tallbeard.itch.io/music-loop-bundle
