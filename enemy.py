@@ -3,7 +3,7 @@ from pgzero.actor import Actor
 
 
 class Orc:
-    def __init__(self, pos, speed=0.7, frame_speed=0.15):
+    def __init__(self, pos, speed=0.5, frame_speed=0.15):
         self.actor = Actor("d_orc_walk0", pos)
         self.speed = speed
 
@@ -48,7 +48,7 @@ class Orc:
 
 class Shooter:
     def __init__(
-        self, pos, speed=0.7, bullet_speed=1, attack_cooldown=0.5, frame_speed=0.15
+        self, pos, speed=0.7, bullet_speed=0.5, attack_cooldown=0.5, frame_speed=0.15
     ):
         self.actor = Actor("d_shooter_attack0", pos)
         self.speed = speed

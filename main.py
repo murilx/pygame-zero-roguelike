@@ -1,9 +1,10 @@
 from enemy import Orc, Shooter
 from hero import Hero
 from menu_button import Button
+from map import rooms
 
 # Dimensões da tela (Jogo com 16x16 tiles, cada tile com 16x18 pixels)
-TILE_SIZE = 18
+TILE_SIZE = 16
 WIDTH = TILE_SIZE * 16
 HEIGHT = TILE_SIZE * 16
 
@@ -23,12 +24,16 @@ def on_mouse_move(pos):
 
 # Cria os objetos para um jogo novo e atualiza o game state
 def on_start():
-    global game_state, hero, goal
-    global bullets, enemies
+    global game_state, hero, enemies, goal
+    global bullets
+    global current_room, doors
+
     hero = Hero((WIDTH // 2, HEIGHT // 2))
-    goal = Actor("goal", (WIDTH // 2, HEIGHT - 36))
-    enemies = [Orc((36, HEIGHT // 2)), Shooter((WIDTH // 2, 36))]
+    goal = None
+    enemies = []
     bullets = []
+    doors = []
+    current_room = "start_room"
     game_state = "playing"
     print("[DEBUG] game_state:", game_state)
 
@@ -133,7 +138,7 @@ def update_bullets():
 
 
 def check_collisions():
-    global game_state
+    global game_state, current_room, hero, bullets
     for enemy in enemies:
         if hero.actor.colliderect(enemy.actor):
             game_state = "defeat"
@@ -142,8 +147,72 @@ def check_collisions():
         if hero.actor.colliderect(bullet[0]):
             game_state = "defeat"
 
-    if hero.actor.colliderect(goal):
-        game_state = "victory"
+    for door in doors:
+        direction, hitbox = door
+        if hero.actor.colliderect(hitbox):
+            current_room = rooms[current_room]["doors"][direction]
+
+            # Reposiciona o herói para a posição correta na próxima sala
+            if direction == "north":
+                hero.actor.pos = (128, 216)
+            elif direction == "east":
+                hero.actor.pos = (208, 128)
+            elif direction == "south":
+                hero.actor.pos = (128, 36)
+            else:
+                hero.actor.pos = (48, 128)
+
+            # Remove qualquer bullet que pudesse estar na lista
+            bullets = []
+
+    if goal is not None:
+        if hero.actor.colliderect(goal):
+            game_state = "victory"
+
+
+def load_room():
+    global enemies, doors, goal, bullets
+    room = rooms[current_room]
+    enemies = room["enemies"]
+    doors = []
+
+    h_door_size = (33, 17)
+    v_door_size = (17, 33)
+    north_door = Rect((112, 0), h_door_size)
+    east_door = Rect((0, 112), v_door_size)
+    west_door = Rect((239, 112), v_door_size)
+    south_door = Rect((112, 239), h_door_size)
+
+    screen.clear()
+    screen.blit("floor_tile", (0, 0))
+
+    for direction, next_room in room["doors"].items():
+        if next_room is not None:
+            if direction == "north":
+                doors.append((direction, north_door))
+                screen.blit("d_door_wall", (0, 0))
+            elif direction == "east":
+                doors.append((direction, east_door))
+                screen.blit("l_door_wall", (0, 0))
+            elif direction == "west":
+                doors.append((direction, west_door))
+                screen.blit("r_door_wall", (240, 0))
+            else:
+                doors.append((direction, south_door))
+                screen.blit("u_door_wall", (0, 240))
+        else:
+            if direction == "north":
+                screen.blit("d_wall", (0, 0))
+            elif direction == "east":
+                screen.blit("l_wall", (0, 0))
+            elif direction == "west":
+                screen.blit("r_wall", (240, 0))
+            else:
+                screen.blit("u_wall", (0, 240))
+
+    if room["goal"]:
+        goal = Actor("goal", (WIDTH // 2, HEIGHT // 2))
+        goal.draw()
 
 
 def draw():
@@ -151,12 +220,12 @@ def draw():
         draw_menu()
     if game_state == "playing":
         screen.clear()
+        load_room()
         hero.draw()
         for enemy in enemies:
             enemy.draw()
         for bullet in bullets:
             bullet[0].draw()
-        goal.draw()
     if game_state == "defeat":
         draw_end_screen("Derrota")
     if game_state == "victory":
