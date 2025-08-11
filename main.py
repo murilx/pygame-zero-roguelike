@@ -1,3 +1,4 @@
+from enemy import Orc, Shooter
 from hero import Hero
 from menu_button import Button
 
@@ -6,7 +7,7 @@ TILE_SIZE = 18
 WIDTH = TILE_SIZE * 16
 HEIGHT = TILE_SIZE * 16
 
-game_state = "menu"  # Estados do jogo: menu, playing
+game_state = "menu"  # Estados do jogo: menu, playing, defeat
 sound_on = True
 sounds.background.play(-1)
 menu_buttons = []
@@ -23,7 +24,10 @@ def on_mouse_move(pos):
 # Cria os objetos para um jogo novo e atualiza o game state
 def on_start():
     global game_state, hero
-    hero = Hero((WIDTH // 2, HEIGHT // 2), 1)
+    global bullets, enemies
+    hero = Hero((WIDTH // 2, HEIGHT // 2))
+    enemies = [Orc((36, HEIGHT // 2)), Shooter((WIDTH // 2, 36))]
+    bullets = []
     game_state = "playing"
     print("[DEBUG] game_state:", game_state)
 
@@ -76,10 +80,66 @@ def draw_menu():
         button.draw(screen, mouse_position)
 
 
+def draw_end_screen(message):
+    message_fontsize = 32
+    subtitle_fontsize = 16
+
+    message_pos = (WIDTH // 2, 16)
+    subtitle_pos = (WIDTH // 2, 16 + message_fontsize)
+
+    screen.clear()
+    screen.draw.text(message, midtop=message_pos, fontsize=message_fontsize)
+    screen.draw.text(
+        "Clique em qualquer lugar da tela para sair",
+        midtop=subtitle_pos,
+        fontsize=subtitle_fontsize,
+    )
+
+
 def on_mouse_down(pos):
     if game_state == "menu":
         for button in menu_buttons:
             button.check_click(pos)
+    if game_state == "defeat":
+        on_exit()  # Fecha o jogo
+
+
+def update_bullets():
+    for bullet in bullets:
+        future_x, future_y = bullet[0].x, bullet[0].y
+        if bullet[1] == "x":
+            future_x = bullet[0].x + bullet[2]
+        else:
+            future_y = bullet[0].y + bullet[2]
+
+        # Verifica a colisão das balas com paredes
+        left_limit = TILE_SIZE
+        right_limit = WIDTH - TILE_SIZE
+        top_limit = TILE_SIZE
+        bottom_limit = HEIGHT - TILE_SIZE
+
+        if future_x < left_limit or future_x > right_limit:
+            bullets.remove(bullet)
+            continue
+
+        if future_y < top_limit or future_y > bottom_limit:
+            bullets.remove(bullet)
+            continue
+
+        # Caso a bala vá para uma posição válida, atualiza
+        bullet[0].x = future_x
+        bullet[0].y = future_y
+
+
+def check_collisions():
+    global game_state
+    for enemy in enemies:
+        if hero.actor.colliderect(enemy.actor):
+            game_state = "defeat"
+
+    for bullet in bullets:
+        if hero.actor.colliderect(bullet[0]):
+            game_state = "defeat"
 
 
 def draw():
@@ -88,6 +148,12 @@ def draw():
     if game_state == "playing":
         screen.clear()
         hero.draw()
+        for enemy in enemies:
+            enemy.draw()
+        for bullet in bullets:
+            bullet[0].draw()
+    if game_state == "defeat":
+        draw_end_screen("Derrota")
 
 
 def update():
@@ -98,3 +164,11 @@ def update():
             (TILE_SIZE, WIDTH - TILE_SIZE, TILE_SIZE, HEIGHT - TILE_SIZE),
             TILE_SIZE,
         )
+        for enemy in enemies:
+            if isinstance(enemy, Orc):
+                enemy.attack(hero)
+            elif isinstance(enemy, Shooter):
+                enemy.attack(hero, bullets, clock)
+            enemy.animate()
+        update_bullets()
+        check_collisions()
